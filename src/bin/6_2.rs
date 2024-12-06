@@ -1,3 +1,5 @@
+use std::{thread::sleep, time::Duration};
+
 #[derive(Debug, PartialEq, Eq)]
 enum Direction {
     Up,
@@ -5,9 +7,7 @@ enum Direction {
     Right,
     Left
 }
-
-fn main() {
-    let mut lines = INPUT.lines().map(|l| l.chars().collect::<Vec<_>>()).collect::<Vec<_>>();
+fn test_loop(mut lines: Vec<Vec<char>>, print: bool) -> bool {
     let X = lines[0].len();
     let Y = lines.len();
     let mut guard = (0, 0);
@@ -19,30 +19,33 @@ fn main() {
             }
         }
     }
+    let base_guard = guard.clone();
     let mut dir = Direction::Up;
+    let mut i = 0;
     loop {
+        i+=1;
         match dir {
             Direction::Up => if guard.1==0 {
                 lines[guard.1][guard.0] = 'X';
-                break
+                return false;
             } else if lines[guard.1-1][guard.0] == '#' {
                 dir = Direction::Right;
             } else {
                 lines[guard.1][guard.0] = 'X';
                 guard.1 -= 1;
             },
-            Direction::Down => if guard.1==Y {
+            Direction::Down => if guard.1==Y-1 {
                 lines[guard.1][guard.0] = 'X';
-                break
+                return false;
             } else if lines[guard.1+1][guard.0] == '#' {
                 dir = Direction::Left;
             } else {
                 lines[guard.1][guard.0] = 'X';
                 guard.1 += 1;
             },
-            Direction::Right => if guard.0==X {
+            Direction::Right => if guard.0==X-1 {
                 lines[guard.1][guard.0] = 'X';
-                break
+                return false;
             } else if lines[guard.1][guard.0+1] == '#' {
                 dir = Direction::Down;
             } else {
@@ -51,7 +54,7 @@ fn main() {
             },
             Direction::Left => if guard.0==0 {
                 lines[guard.1][guard.0] = 'X';
-                break
+                return false;
             } else if lines[guard.1][guard.0-1] == '#' {
                 dir = Direction::Up;
             } else {
@@ -59,9 +62,33 @@ fn main() {
                 guard.0 -= 1;
             }
         }
+        if guard == base_guard && dir == Direction::Up {
+            return true;
+        }
+        if i > X*Y {
+            return true;
+        }
     }
-    println!("{}", lines.iter().map(|l| l.iter().collect::<String>()).collect::<Vec<_>>().join("\n"));
-    let count: usize = lines.iter().fold(0, |acc, l| acc+l.iter().fold(0, |acc, c| if *c == 'X' {acc+1} else {acc}));
+}
+
+fn main() {
+    let lines = INPUT.lines().map(|l| l.chars().collect::<Vec<_>>()).collect::<Vec<_>>();
+    let X = lines[0].len();
+    let Y = lines.len();
+    let mut count: usize = 0;
+    for x in 0..X {
+        for y in 0..Y {
+            println!("{}, {}", x, y);
+            if lines[y][x] != '.' {
+                continue
+            }
+            let mut new_lines = lines.clone();
+            new_lines[y][x] = '#';
+            if test_loop(new_lines, x==3 && y==26) {
+                count += 1;
+            }
+        }
+    }
     dbg!(count);
 }
 
